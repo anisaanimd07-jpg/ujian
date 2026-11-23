@@ -1,0 +1,2044 @@
+<!DOCTYPE html>
+<html lang="id" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Server VirtualBox Academy - Praktikum ASJ SMK TKJ</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        ubuntu: {
+                            orange: '#E95420',
+                            aubergine: '#2C001E',
+                            dark: '#18181b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #E95420;
+        }
+
+        /* Animated Packet Flow */
+        @keyframes pulseFlow {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(200%); opacity: 0; }
+        }
+        .net-flow {
+            animation: pulseFlow 2.4s infinite linear;
+        }
+
+        /* Terminal Cursor */
+        @keyframes blinkCursor {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .term-cursor {
+            animation: blinkCursor 1s infinite;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200 font-sans antialiased selection:bg-[#E95420]/30 selection:text-orange-200">
+
+    <!-- Toast Notification Container (No alert() used) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden sticky top-0 z-40 bg-zinc-900/95 backdrop-blur-md border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#E95420] to-amber-600 flex items-center justify-center shadow-lg shadow-[#E95420]/20">
+                <i data-lucide="terminal" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-sm leading-tight">Linux VirtualBox ASJ</h1>
+                <p class="text-[11px] text-emerald-400 font-mono">SMK TKJ Lab Docs</p>
+            </div>
+        </div>
+        <button id="mobile-menu-btn" class="p-2 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 focus:outline-none">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+    </header>
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 hidden lg:hidden"></div>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-50 h-screen w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0">
+            <!-- Brand Logo -->
+            <div class="p-5 border-b border-zinc-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E95420] to-orange-700 flex items-center justify-center shadow-lg shadow-[#E95420]/25">
+                        <i data-lucide="server" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div>
+                        <span class="font-bold text-white tracking-tight block text-base">Linux ASJ Lab</span>
+                        <span class="text-xs text-emerald-400 font-mono">Debian & Ubuntu VM</span>
+                    </div>
+                </div>
+                <button id="close-sidebar-btn" class="lg:hidden p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Live Search Filter -->
+            <div class="p-4 border-b border-zinc-800/80">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="search-input" placeholder="Cari materi / perintah..." 
+                        class="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-[#E95420] focus:ring-1 focus:ring-[#E95420] transition">
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-4 space-y-5 text-sm">
+                <!-- Group 1 -->
+                <div class="nav-group">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Modul 1: VirtualBox</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#modul-1-vbox" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-[#E95420] transition">
+                                <i data-lucide="box" class="w-4 h-4 text-[#E95420]"></i>
+                                <span>Spesifikasi & Mode Network</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#topologi-vbox" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-[#E95420] transition">
+                                <i data-lucide="network" class="w-4 h-4 text-[#E95420]"></i>
+                                <span>Topologi Host & VM Client</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 2 -->
+                <div class="nav-group">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Modul 2: Dasar Linux & File</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#modul-2-direktori" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-emerald-400 transition">
+                                <i data-lucide="folder-tree" class="w-4 h-4 text-emerald-400"></i>
+                                <span>Hierarki & Manajemen Direktori</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#kalkulator-chmod" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-emerald-400 transition">
+                                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                                <span>Hak Akses (chmod & chown)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+              <!-- Group 3 -->
+                <div class="nav-group">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Modul 3: Repositori & APT</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#modul-3-repo" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-orange-400 transition">
+                                <i data-lucide="package-search" class="w-4 h-4 text-orange-400"></i>
+                                <span>Ganti Repositori Lokal & ISO</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 4 & 5 -->
+                <div class="nav-group">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Modul 4 & 5: Server UKK</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#modul-4-ip-ssh" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-cyan-400 transition">
+                                <i data-lucide="ethernet-port" class="w-4 h-4 text-cyan-400"></i>
+                                <span>IP Static & SSH Server</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#modul-5-services" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-cyan-400 transition">
+                                <i data-lucide="layers" class="w-4 h-4 text-cyan-400"></i>
+                                <span>DHCP, DNS (Bind9) & Web</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Group 6 -->
+                <div class="nav-group">
+                    <p class="px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">Lab & Simulasi Interaktif</p>
+                    <ul class="space-y-1">
+                        <li>
+                            <a href="#bash-simulator" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-emerald-400 transition">
+                                <i data-lucide="terminal-square" class="w-4 h-4 text-emerald-400"></i>
+                                <span>Bash Terminal Simulator</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#config-generator" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-[#E95420] transition">
+                                <i data-lucide="file-code-2" class="w-4 h-4 text-[#E95420]"></i>
+                                <span>Generator Repo & IP Static</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#kuis-asj" class="nav-link flex items-center gap-2.5 px-3 py-2 rounded-lg text-zinc-300 hover:bg-zinc-800/80 hover:text-amber-400 transition">
+                                <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                                <span>Kuis Latihan ASJ (8 Soal)</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Status Footer -->
+            <div class="p-4 border-t border-zinc-800 text-xs text-zinc-400 bg-zinc-950/60">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="flex items-center gap-1.5 text-emerald-400 font-mono">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        root@debian-smk:~#
+                    </span>
+                    <span class="px-2 py-0.5 rounded bg-[#E95420]/15 text-[#E95420] border border-[#E95420]/30 font-semibold">ASJ TKJ</span>
+                </div>
+                <p class="text-[11px] text-zinc-500">Debian 11/12 & Ubuntu 22.04/24.04 LTS</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 min-w-0 px-4 sm:px-8 lg:px-12 py-8 max-w-6xl mx-auto space-y-16">
+
+            <!-- Header / Hero Section -->
+            <section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-[#2C001E]/70 border border-zinc-800 p-6 sm:p-10 shadow-2xl">
+                <div class="absolute top-0 right-0 -mt-12 -mr-12 w-72 h-72 bg-[#E95420]/15 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 max-w-3xl">
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#E95420]/15 border border-[#E95420]/40 text-orange-300 text-xs font-semibold">
+                            <span class="w-2 h-2 rounded-full bg-[#E95420] animate-ping"></span>
+                            Modul Praktikum ASJ - SMK TKJ
+                        </span>
+                        <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-xs">
+                            Oracle VM VirtualBox Ready
+                        </span>
+                    </div>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+                        Administrasi Sistem Jaringan <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#E95420] via-orange-400 to-emerald-400">Linux Server di VirtualBox</span>
+                    </h1>
+                    <p class="text-zinc-300 text-sm sm:text-base leading-relaxed mb-6">
+                        Panduan praktikum laboratorium komputer SMK jurusan TKJ dari nol: pengaturan adapter jaringan VirtualBox, perintah dasar direktori & permission Linux, mengganti repositori lokal Indonesia (<code class="text-emerald-400 font-mono">sources.list</code>), hingga instalasi layanan DHCP, DNS, dan Web Server.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="#bash-simulator" class="px-5 py-2.5 rounded-xl bg-[#E95420] hover:bg-orange-600 text-white font-semibold text-sm transition shadow-lg shadow-[#E95420]/25 flex items-center gap-2">
+                            <i data-lucide="terminal" class="w-4 h-4"></i>
+                            Buka Bash Terminal Simulator
+                        </a>
+                        <a href="#config-generator" class="px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-medium text-sm transition flex items-center gap-2">
+                            <i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400"></i>
+                            Generator Repo & IP Static
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+          <!-- ================================================================= -->
+            <!-- MODUL 1: DASAR VIRTUALBOX & SETTING JARINGAN                      -->
+            <!-- ================================================================= -->
+            <section id="modul-1-vbox" class="searchable-section scroll-mt-20 space-y-6">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-[#E95420]">Modul 01 — Virtualisasi</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Dasar VirtualBox & Setting Jaringan (Wajib Praktikum)</h2>
+                </div>
+
+                <!-- Spesifikasi VM Ringan untuk PC Lab Sekolah -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-5 h-5 text-[#E95420]"></i>
+                        1.1 Rekomendasi Spesifikasi VM Ringan untuk PC Lab Sekolah
+                    </h3>
+                    <p class="text-sm text-zinc-300 leading-relaxed">
+                        Karena komputer di laboratorium sekolah sering memiliki RAM terbatas (4 GB – 8 GB) dan menjalankan 2 VM sekaligus (Server + Client), gunakan alokasi resource berikut agar tidak <em>hang</em>:
+                    </p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <span class="text-xs text-zinc-500 block">Base Memory (RAM)</span>
+                            <span class="text-base font-bold font-mono text-emerald-400 mt-1 block">1024 MB (1 GB)</span>
+                            <span class="text-[11px] text-zinc-400 mt-0.5 block">Cukup untuk mode CLI Server</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <span class="text-xs text-zinc-500 block">Processor (CPU)</span>
+                            <span class="text-base font-bold font-mono text-emerald-400 mt-1 block">1 - 2 Core</span>
+                            <span class="text-[11px] text-zinc-400 mt-0.5 block">Tetap di zona hijau slider</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <span class="text-xs text-zinc-500 block">Virtual Hard Disk</span>
+                            <span class="text-base font-bold font-mono text-emerald-400 mt-1 block">15 - 20 GB (VDI)</span>
+                            <span class="text-[11px] text-zinc-400 mt-0.5 block">Dynamically Allocated</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <span class="text-xs text-zinc-500 block">Display & Audio</span>
+                            <span class="text-base font-bold font-mono text-orange-400 mt-1 block">16 MB / Disable</span>
+                            <span class="text-[11px] text-zinc-400 mt-0.5 block">Matikan Audio & USB 3.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel Perbandingan Mode Network VirtualBox -->
+                <div class="space-y-3">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="network" class="w-5 h-5 text-[#E95420]"></i>
+                        1.2 Perbandingan 4 Mode Network Adapter VirtualBox
+                    </h3>
+                    <div class="overflow-x-auto rounded-xl border border-zinc-800">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-zinc-900 border-b border-zinc-800 text-zinc-200">
+                                    <th class="p-4 font-semibold">Mode Network</th>
+                                    <th class="p-4 font-semibold">Akses Internet</th>
+                                    <th class="p-4 font-semibold">Komunikasi Host & VM</th>
+                                    <th class="p-4 font-semibold">Fungsi Utama dalam Praktikum SMK</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-800 bg-zinc-950/70 text-zinc-300">
+                                <tr class="hover:bg-zinc-900/60 transition">
+                                    <td class="p-4 font-bold text-emerald-400 font-mono">NAT</td>
+                                    <td class="p-4 text-emerald-400 font-semibold">Ya (Otomatis)</td>
+                                    <td class="p-4 text-zinc-400">VM &rarr; Internet saja (Terisolasi dari Host)</td>
+                                    <td class="p-4 text-xs sm:text-sm"><strong>Adapter 1 (eth0/enp0s3):</strong> Wajib dipakai saat ingin <code>apt update</code> dan mengunduh paket aplikasi dari repositori internet.</td>
+                                </tr>
+                                <tr class="hover:bg-zinc-900/60 transition">
+                                    <td class="p-4 font-bold text-[#E95420] font-mono">Host-Only Adapter</td>
+                                    <td class="p-4 text-rose-400">Tidak</td>
+                                    <td class="p-4 text-emerald-400 font-semibold">Dua Arah (Windows Host &harr; VM)</td>
+                                    <td class="p-4 text-xs sm:text-sm"><strong>Adapter 2 (eth1/enp0s8):</strong> Menghubungkan Windows asli dengan VM Linux agar bisa remote <strong>SSH via PuTTY</strong> dan uji buka Web Server di browser Windows.</td>
+                                </tr>
+                                <tr class="hover:bg-zinc-900/60 transition">
+                                    <td class="p-4 font-bold text-cyan-400 font-mono">Internal Network</td>
+                                    <td class="p-4 text-rose-400">Tidak</td>
+                                    <td class="p-4 text-cyan-300">Antar sesama VM saja (misal: intnet)</td>
+                                    <td class="p-4 text-xs sm:text-sm"><strong>Simulasi UKK Full VM:</strong> Menghubungkan VM Debian Server ke VM Windows 7/10 Client di dalam VirtualBox untuk uji DHCP Server dan DNS.</td>
+                                </tr>
+                                <tr class="hover:bg-zinc-900/60 transition">
+                                    <td class="p-4 font-bold text-amber-400 font-mono">Bridged Adapter</td>
+                                    <td class="p-4 text-emerald-400">Ya (Satu segmen LAN)</td>
+                                    <td class="p-4 text-emerald-400">Semua PC di Lab Sekolah</td>
+                                    <td class="p-4 text-xs sm:text-sm">VM seolah-olah menjadi komputer fisik baru di jaringan kabel/Wi-Fi lab sekolah. Hati-hati jika menyalakan DHCP Server (bisa bentrok dengan router lab!).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Diagram Alur Interaktif Topologi VirtualBox -->
+                <div id="topologi-vbox" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">1.3 Diagram Topologi Praktikum Dual-Adapter VirtualBox</h3>
+                            <p class="text-xs sm:text-sm text-zinc-400">Klik perangkat pada diagram untuk melihat konfigurasi adapter VirtualBox dan IP-nya.</p>
+                        </div>
+                        <span class="text-xs font-mono px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            Standar Lab ASJ
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-11 gap-4 items-center">
+                        <!-- Internet / Modem -->
+                        <button onclick="selectVboxNode('internet')" class="lg:col-span-2 p-4 rounded-xl bg-zinc-950 border-2 border-zinc-800 hover:border-emerald-500 transition text-center cursor-pointer">
+                            <i data-lucide="globe" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i>
+                            <h4 class="font-bold text-white text-xs sm:text-sm">Internet / Repo</h4>
+                            <span class="text-[10px] font-mono text-zinc-400 block mt-1">Mirror Indonesia</span>
+                        </button>
+
+                        <!-- Link NAT -->
+                        <div class="lg:col-span-2 text-center py-1">
+                            <span class="text-[11px] font-mono text-emerald-400 block mb-1">Adapter 1: NAT</span>
+                            <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div class="w-1/2 h-full bg-emerald-400 net-flow"></div>
+                            </div>
+                            <span class="text-[10px] font-mono text-zinc-500 block mt-1">DHCP (10.0.2.15)</span>
+                        </div>
+
+                        <!-- VM Linux Server -->
+                        <button onclick="selectVboxNode('vm_server')" class="lg:col-span-3 p-5 rounded-xl bg-gradient-to-b from-zinc-900 to-zinc-950 border-2 border-[#E95420]/70 hover:border-[#E95420] transition text-center cursor-pointer shadow-lg shadow-[#E95420]/10">
+                            <i data-lucide="server" class="w-9 h-9 text-[#E95420] mx-auto mb-2"></i>
+                            <h4 class="font-bold text-white text-sm sm:text-base">VM Debian / Ubuntu Server</h4>
+                            <div class="mt-2.5 space-y-1 text-[10px] font-mono">
+                                <div class="px-2 py-1 rounded bg-zinc-800 text-emerald-300">enp0s3 (NAT): DHCP Client</div>
+                                <div class="px-2 py-1 rounded bg-zinc-800 text-orange-300">enp0s8 (Host-Only/Intnet): 192.168.56.10/24</div>
+                            </div>
+                        </button>
+
+                        <!-- Link Host-Only / Internal -->
+                        <div class="lg:col-span-2 text-center py-1">
+                            <span class="text-[11px] font-mono text-[#E95420] block mb-1">Adapter 2: Host-Only / Intnet</span>
+                            <div class="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                                <div class="w-1/2 h-full bg-[#E95420] net-flow"></div>
+                            </div>
+                            <span class="text-[10px] font-mono text-zinc-500 block mt-1">Jaringan Lokal Lab</span>
+                        </div>
+
+                        <!-- Host Windows / VM Client -->
+                        <button onclick="selectVboxNode('client')" class="lg:col-span-2 p-4 rounded-xl bg-zinc-950 border-2 border-zinc-800 hover:border-cyan-500 transition text-center cursor-pointer">
+                            <i data-lucide="laptop" class="w-8 h-8 text-cyan-400 mx-auto mb-2"></i>
+                            <h4 class="font-bold text-white text-xs sm:text-sm">Windows Host / VM Client</h4>
+                            <span class="text-[10px] font-mono text-cyan-400 block mt-1">192.168.56.1 / DHCP</span>
+                        </button>
+                    </div>
+
+                    <!-- Detail Panel -->
+                    <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex items-start gap-3">
+                        <i data-lucide="info" class="w-5 h-5 text-[#E95420] shrink-0 mt-0.5"></i>
+                        <div>
+                            <h5 id="vbox-node-title" class="font-bold text-white text-sm">VM Debian / Ubuntu Server (2 Network Adapter)</h5>
+                            <p id="vbox-node-desc" class="text-xs sm:text-sm text-zinc-300 mt-1">
+                                Menggunakan <strong>Adapter 1 (NAT)</strong> untuk menarik paket instalasi dari internet tanpa mengganggu jaringan lab, dan <strong>Adapter 2 (Host-Only / Internal Network)</strong> sebagai IP Statis server untuk melayani SSH, Web, DNS, dan DHCP ke klien.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+          <!-- ================================================================= -->
+            <!-- MODUL 2: PERINTAH DASAR LINUX & MANAJEMEN DIREKTORI / FILE        -->
+            <!-- ================================================================= -->
+            <section id="modul-2-direktori" class="searchable-section scroll-mt-20 space-y-6">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-emerald-400">Modul 02 — Fundamental CLI</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Perintah Dasar Linux & Manajemen Direktori / File</h2>
+                </div>
+
+                <!-- Struktur Hierarki Direktori Linux -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i data-lucide="folder-tree" class="w-5 h-5 text-emerald-400"></i>
+                        2.1 Struktur Hierarki Direktori Penting di Linux Server
+                    </h3>
+                    <p class="text-sm text-zinc-300">
+                        Linux tidak mengenal drive <code class="text-zinc-400">C:\</code> atau <code class="text-zinc-400">D:\</code> seperti Windows. Semua folder berawal dari direktori akar tertinggi yaitu <code class="text-emerald-400 font-bold">/</code> (root directory):
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 text-sm">
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-emerald-400 font-bold font-mono text-base">/</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>Root Directory:</strong> Puncak tertinggi dari seluruh sistem file Linux.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-[#E95420] font-bold font-mono text-base">/etc</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>Configuration Files:</strong> Menyimpan semua file konfigurasi layanan (<code>interfaces</code>, <code>sources.list</code>, <code>bind</code>, <code>apache2</code>).</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-cyan-400 font-bold font-mono text-base">/var/www/html</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>Document Root Web:</strong> Direktori tempat menyimpan file HTML/PHP website pada Apache2 atau Nginx.</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-amber-400 font-bold font-mono text-base">/home</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>User Home:</strong> Direktori pribadi untuk user biasa (misal: <code>/home/siswa</code>).</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-rose-400 font-bold font-mono text-base">/root</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>Superuser Home:</strong> Direktori khusus milik administrator tertinggi (<code>root</code>).</p>
+                        </div>
+                        <div class="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
+                            <code class="text-purple-400 font-bold font-mono text-base">/var/log</code>
+                            <p class="text-xs text-zinc-400 mt-1"><strong>System Logs:</strong> Menyimpan catatan aktivitas & error sistem untuk troubleshooting.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabel & Contoh Praktikum Perintah Direktori & File -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-6 overflow-x-auto rounded-xl border border-zinc-800">
+                        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                            <thead>
+                                <tr class="bg-zinc-900 border-b border-zinc-800 text-zinc-200">
+                                    <th class="p-3.5 font-semibold">Perintah</th>
+                                    <th class="p-3.5 font-semibold">Fungsi & Contoh Penggunaan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-800 bg-zinc-950/70 text-zinc-300">
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">pwd</td>
+                                    <td class="p-3.5"><em>Print Working Directory</em> — Menampilkan lokasi direktori aktif saat ini.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">ls -la</td>
+                                    <td class="p-3.5">Menampilkan daftar seluruh isi folder termasuk file tersembunyi (diawali titik) dan detail hak akses.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">cd</td>
+                                    <td class="p-3.5"><em>Change Directory</em> — Pindah folder. Contoh: <code>cd /etc/network</code> atau <code>cd ..</code> (naik 1 tingkat).</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">mkdir -p</td>
+                                    <td class="p-3.5">Membuat folder baru. Opsi <code>-p</code> membuat sub-folder bertingkat sekaligus.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">touch</td>
+                                    <td class="p-3.5">Membuat file kosong baru (misal: <code>touch index.html</code>).</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">cp -r</td>
+                                    <td class="p-3.5">Menyalin file/folder (wajib gunakan <code>-r</code> jika menyalin direktori beserta isinya).</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-emerald-400">mv</td>
+                                    <td class="p-3.5">Memindahkan file/folder atau mengubah nama (<em>rename</em>).</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-rose-400">rm -rf</td>
+                                    <td class="p-3.5">Menghapus file atau direktori beserta seluruh isinya secara permanen.</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3.5 font-mono font-bold text-cyan-400">cat / nano</td>
+                                    <td class="p-3.5"><code>cat</code> membaca isi file di layar; <code>nano</code> membuka text editor terminal (Simpan: <strong>Ctrl+O</strong>, Keluar: <strong>Ctrl+X</strong>).</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Praktek CLI Blok -->
+                    <div class="lg:col-span-6 bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col justify-between code-wrapper">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-xs font-mono font-semibold text-emerald-400 uppercase">Praktikum Manajemen Direktori & File</span>
+                                <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-[#E95420]"></i>
+                                    <span>Salin Perintah</span>
+                                </button>
+                            </div>
+                            <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+<pre class="font-mono text-xs sm:text-[13px] text-zinc-200 leading-relaxed whitespace-pre"># 1. Cek lokasi saat ini & pindah ke direktori /home
+pwd
+cd /home
+
+# 2. Membuat struktur direktori bertingkat untuk praktikum TKJ
+mkdir -p praktikum_tkj/web/assets
+ls -la praktikum_tkj
+
+# 3. Membuat file kosong & mengisi teks dengan nano
+touch praktikum_tkj/web/index.html
+nano praktikum_tkj/web/index.html
+
+# 4. Membaca isi file yang sudah dibuat
+cat praktikum_tkj/web/index.html
+
+# 5. Backup (copy) folder konfigurasi sebelum diedit (Wajib di UKK!)
+cp /etc/apt/sources.list /etc/apt/sources.list.backup
+
+# 6. Mengubah nama file (rename) & menghapus folder latihan
+mv praktikum_tkj/web/index.html praktikum_tkj/web/beranda.html
+rm -rf praktikum_tkj</pre>
+                            </div>
+                        </div>
+                        <p class="text-xs text-zinc-400 mt-3 flex items-center gap-1.5">
+                            <i data-lucide="lightbulb" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                            Gunakan tombol <strong>Tab</strong> di keyboard saat mengetik nama file/direktori untuk fitur <em>Auto-Complete</em> otomatis!
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 2.2 Hak Akses File (chmod & chown) + Kalkulator Interaktif -->
+                <div id="kalkulator-chmod" class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+                                2.2 Hak Akses File (<code>chmod</code> & <code>chown</code>) + Kalkulator Interaktif
+                            </h3>
+                            <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+                                Setiap file di Linux memiliki 3 kelompok pemilik: <strong>Owner (User)</strong>, <strong>Group</strong>, dan <strong>Others</strong> dengan nilai oktal: <code class="text-emerald-400">Read (r) = 4</code>, <code class="text-amber-400">Write (w) = 2</code>, <code class="text-cyan-400">Execute (x) = 1</code>.
+                            </p>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button onclick="setChmodPreset(7,5,5)" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-emerald-400 border border-zinc-700">755 (Folder/Script)</button>
+                            <button onclick="setChmodPreset(6,4,4)" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-cyan-400 border border-zinc-700">644 (File Web)</button>
+                            <button onclick="setChmodPreset(7,7,7)" class="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs font-mono text-amber-400 border border-zinc-700">777 (Full Access)</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Owner -->
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2.5">
+                            <span class="font-bold text-white text-sm block border-b border-zinc-800 pb-2">Owner (Pemilik File)</span>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-u-r" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Read (r) — Nilai 4</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-u-w" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Write (w) — Nilai 2</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-u-x" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Execute (x) — Nilai 1</span>
+                            </label>
+                        </div>
+
+                        <!-- Group -->
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2.5">
+                            <span class="font-bold text-white text-sm block border-b border-zinc-800 pb-2">Group (Grup Pemilik)</span>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-g-r" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Read (r) — Nilai 4</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-g-w" onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Write (w) — Nilai 2</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-g-x" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Execute (x) — Nilai 1</span>
+                            </label>
+                        </div>
+
+                        <!-- Others -->
+                        <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2.5">
+                            <span class="font-bold text-white text-sm block border-b border-zinc-800 pb-2">Others (Pengguna Lain)</span>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-o-r" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Read (r) — Nilai 4</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-o-w" onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Write (w) — Nilai 2</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-sm text-zinc-300 cursor-pointer">
+                                <input type="checkbox" id="chk-o-x" checked onchange="updateChmod()" class="rounded text-emerald-500 bg-zinc-900 border-zinc-700">
+                                <span>Execute (x) — Nilai 1</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Output Kalkulator Chmod -->
+                    <div class="p-4 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 code-wrapper">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div>
+                                <span class="text-xs text-zinc-500 block">Kode Oktal</span>
+                                <span id="chmod-octal" class="text-xl font-mono font-bold text-[#E95420]">755</span>
+                            </div>
+                            <div class="h-8 w-px bg-zinc-800 hidden sm:block"></div>
+                            <div>
+                                <span class="text-xs text-zinc-500 block">Notasi Simbolik</span>
+                                <span id="chmod-symbolic" class="text-base font-mono font-bold text-emerald-400">-rwxr-xr-x</span>
+                            </div>
+                            <div class="h-8 w-px bg-zinc-800 hidden sm:block"></div>
+                            <div>
+                                <span class="text-xs text-zinc-500 block">Perintah Siap Pakai</span>
+                                <pre id="chmod-cmd" class="text-xs sm:text-sm font-mono text-zinc-200">chmod -R 755 /var/www/html && chown -R www-data:www-data /var/www/html</pre>
+                            </div>
+                        </div>
+                        <button onclick="copyCode(this)" class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Salin</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+          <!-- ================================================================= -->
+            <!-- MODUL 3: MANAJEMEN REPOSITORI & PAKET (SOURCES.LIST & APT)        -->
+            <!-- ================================================================= -->
+            <section id="modul-3-repo" class="searchable-section scroll-mt-20 space-y-6">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-orange-400">Modul 03 — Package Management</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Manajemen Repositori & Paket (<code>sources.list</code> & <code>apt</code>)</h2>
+                    <p class="text-sm text-zinc-400 mt-1">
+                        Mengganti alamat repositori bawaan luar negeri ke <strong>Mirror Lokal Indonesia</strong> (Kartolo SBY / Kebo VLSM / UGM) agar proses instalasi paket aplikasi di VirtualBox sekolah berjalan sangat cepat.
+                    </p>
+                </div>
+
+                <!-- Langkah 1: Cek Versi OS -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-[#E95420]/20 text-[#E95420] font-mono text-xs flex items-center justify-center">1</span>
+                        Cek Versi & Codename OS Linux Terlebih Dahulu
+                    </h3>
+                    <p class="text-xs sm:text-sm text-zinc-300">
+                        Jangan sampai salah memasukkan repositori! Misalnya Debian 11 bernama <code class="text-emerald-400">bullseye</code>, Debian 12 bernama <code class="text-emerald-400">bookworm</code>, dan Ubuntu 22.04 bernama <code class="text-orange-400">jammy</code>.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="code-wrapper bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-mono text-zinc-400">Perintah Cek Versi OS</span>
+                                <button onclick="copyCode(this)" class="text-xs text-emerald-400 hover:underline flex items-center gap-1"><i data-lucide="copy" class="w-3 h-3"></i> Salin</button>
+                            </div>
+                            <pre class="font-mono text-xs sm:text-sm text-emerald-400">cat /etc/os-release
+lsb_release -a</pre>
+                        </div>
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-300">
+                            <span class="text-zinc-500 block mb-1"># Contoh Output di Terminal:</span>
+                            PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"<br>
+                            VERSION_ID="12"<br>
+                            VERSION_CODENAME=<span class="text-[#E95420] font-bold">bookworm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Langkah 2: Tab Pilihan Repositori (Debian 11, Debian 12, Ubuntu, DVD ISO) -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden">
+                    <div class="p-6 border-b border-zinc-800 space-y-4">
+                        <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#E95420]/20 text-[#E95420] font-mono text-xs flex items-center justify-center">2</span>
+                            Daftar Repositori Lokal Indonesia & DVD ISO VirtualBox
+                        </h3>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="switchRepoTab('deb12')" data-repo="deb12" class="repo-tab px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#E95420] bg-[#E95420]/15 text-orange-300 transition">
+                                Debian 12 (Bookworm)
+                            </button>
+                            <button onclick="switchRepoTab('deb11')" data-repo="deb11" class="repo-tab px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition">
+                                Debian 11 (Bullseye)
+                            </button>
+                            <button onclick="switchRepoTab('ubuntu22')" data-repo="ubuntu22" class="repo-tab px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition">
+                                Ubuntu 22.04 (Jammy)
+                            </button>
+                            <button onclick="switchRepoTab('dvdiso')" data-repo="dvdiso" class="repo-tab px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition">
+                                Offline DVD ISO (VirtualBox)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="repo-tab-content" class="p-6 bg-zinc-950/60">
+                        <!-- Rendered dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- Langkah 3: Perintah Wajib APT -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 code-wrapper">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-[#E95420]/20 text-[#E95420] font-mono text-xs flex items-center justify-center">3</span>
+                            Perintah Wajib Manajemen Paket APT setelah Ganti Repo
+                        </h3>
+                        <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Salin Perintah</span>
+                        </button>
+                    </div>
+                    <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+<pre class="font-mono text-xs sm:text-[13px] text-zinc-200 leading-relaxed whitespace-pre"># 1. Memperbarui daftar indeks paket dari repositori baru (WAJIB dilakukan pertama kali!)
+apt update
+
+# 2. Memperbarui versi paket yang sudah terinstal (opsional di lab jika waktu terbatas)
+apt upgrade -y
+
+# 3. Menginstal paket aplikasi jaringan (contoh: net-tools, dnsutils, ssh, apache2)
+apt install -y net-tools dnsutils openssh-server apache2
+
+# 4. Menghapus paket beserta seluruh file konfigurasinya
+apt remove --purge nama_paket -y && apt autoremove -y</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================================================================= -->
+            <!-- MODUL 4: KONFIGURASI IP ADDRESS STATIS & SSH SERVER               -->
+            <!-- ================================================================= -->
+            <section id="modul-4-ip-ssh" class="searchable-section scroll-mt-20 space-y-6">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-cyan-400">Modul 04 — Networking & Remote</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Konfigurasi IP Address Statis & SSH Server</h2>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Debian /etc/network/interfaces -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-between code-wrapper">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2.5 py-1 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 font-mono text-xs font-bold">Debian 11 / 12</span>
+                                <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                    <span>Salin</span>
+                                </button>
+                            </div>
+                            <h3 class="font-bold text-white text-base">File: <code class="text-cyan-400">/etc/network/interfaces</code></h3>
+                            <p class="text-xs text-zinc-400">Cek nama interface terlebih dahulu dengan perintah <code class="text-emerald-400">ip a</code> (umumnya <code>enp0s3</code> untuk Adapter 1 NAT dan <code>enp0s8</code> untuk Adapter 2 Host-Only/Internal).</p>
+                            <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+<pre class="font-mono text-xs text-zinc-200 leading-relaxed whitespace-pre"># Edit file konfigurasi jaringan Debian
+nano /etc/network/interfaces
+
+# --- Isi Konfigurasi ---
+source /etc/network/interfaces.d/*
+
+# Loopback network interface
+auto lo
+iface lo inet loopback
+
+# Adapter 1 (NAT - Koneksi Internet)
+allow-hotplug enp0s3
+iface enp0s3 inet dhcp
+
+# Adapter 2 (Host-Only / Internal Network - IP Statis Server)
+auto enp0s8
+iface enp0s8 inet static
+    address 192.168.56.10
+    netmask 255.255.255.0
+
+# Simpan (Ctrl+O, Enter, Ctrl+X), lalu restart service:
+systemctl restart networking
+ip a</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ubuntu Netplan -->
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-between code-wrapper">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2.5 py-1 rounded bg-[#E95420]/15 text-[#E95420] border border-[#E95420]/30 font-mono text-xs font-bold">Ubuntu Server 22.04 / 24.04</span>
+                                <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-[#E95420]"></i>
+                                    <span>Salin</span>
+                                </button>
+                            </div>
+                            <h3 class="font-bold text-white text-base">File: <code class="text-orange-400">/etc/netplan/00-installer-config.yaml</code></h3>
+                            <p class="text-xs text-zinc-400">Perhatikan indentasi (spasi) pada file YAML! Jangan gunakan tombol Tab, gunakan spasi yang sejajar.</p>
+                            <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+<pre class="font-mono text-xs text-zinc-200 leading-relaxed whitespace-pre"># Edit file netplan Ubuntu
+nano /etc/netplan/00-installer-config.yaml
+
+# --- Isi Konfigurasi YAML ---
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: true
+    enp0s8:
+      dhcp4: false
+      addresses:
+        - 192.168.56.10/24
+
+# Terapkan konfigurasi Netplan & cek IP:
+netplan apply
+ip a</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Konfigurasi OpenSSH Server -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 code-wrapper">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i data-lucide="terminal" class="w-5 h-5 text-emerald-400"></i>
+                                4.2 Instalasi & Konfigurasi OpenSSH Server (Remote dari Windows)
+                            </h3>
+                            <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+                                Dengan SSH, siswa bisa menyalin-tempel (Copy-Paste) perintah dari Windows langsung ke terminal Linux menggunakan aplikasi <strong>PuTTY</strong> atau <strong>Command Prompt / PowerShell</strong> Windows!
+                            </p>
+                        </div>
+                        <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Salin Perintah</span>
+                        </button>
+                    </div>
+                    <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+<pre class="font-mono text-xs sm:text-[13px] text-zinc-200 leading-relaxed whitespace-pre"># 1. Instal paket OpenSSH Server
+apt install -y openssh-server
+
+# 2. (Opsional untuk soal UKK) Mengganti Port SSH default 22 menjadi 2222 & izinkan login root
+nano /etc/ssh/sshd_config
+# Ubah baris berikut (hapus tanda pagar # di depannya):
+# Port 2222
+# PermitRootLogin yes
+
+# 3. Restart layanan SSH dan cek statusnya
+systemctl restart ssh
+systemctl status ssh
+
+# 4. Cara mengakses dari CMD / PowerShell Windows Host (jika menggunakan Host-Only 192.168.56.10):
+# ssh siswa@192.168.56.10 -p 2222</pre>
+                    </div>
+                </div>
+            </section>
+
+          <!-- ================================================================= -->
+            <!-- MODUL 5: PRAKTIKUM LAYANAN SERVER SMK (UKK ASJ)                   -->
+            <!-- ================================================================= -->
+            <section id="modul-5-services" class="searchable-section scroll-mt-20 space-y-6">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-cyan-400">Modul 05 — Core Services UKK</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Praktikum Layanan Server SMK (DHCP, DNS & Web Server)</h2>
+                    <p class="text-sm text-zinc-400 mt-1">Pilih layanan server di bawah ini untuk melihat langkah instalasi dan isi file konfigurasinya.</p>
+                </div>
+
+                <!-- Service Selector Tabs -->
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="switchServiceTab('dhcp')" data-srv="dhcp" class="srv-tab px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-500 bg-cyan-500/15 text-cyan-300 transition">
+                        1. DHCP Server (isc-dhcp-server)
+                    </button>
+                    <button onclick="switchServiceTab('dns')" data-srv="dns" class="srv-tab px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition">
+                        2. DNS Server (bind9)
+                    </button>
+                    <button onclick="switchServiceTab('web')" data-srv="web" class="srv-tab px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition">
+                        3. Web Server (Apache2)
+                    </button>
+                </div>
+
+                <!-- Dynamic Service Content -->
+                <div id="service-content-box" class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- ================================================================= -->
+            <!-- LAB INTERAKTIF: BASH SIMULATOR, GENERATOR & KUIS                  -->
+            <!-- ================================================================= -->
+            <div class="space-y-14">
+                <div class="border-b border-zinc-800 pb-4">
+                    <span class="text-xs font-mono uppercase tracking-wider text-emerald-400">Modul 06 — Hands-on Virtual Lab</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Lab Interaktif & Simulasi Praktikum Linux</h2>
+                </div>
+
+                <!-- 6.1 Bash Terminal Simulator -->
+                <section id="bash-simulator" class="scroll-mt-20 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="terminal-square" class="w-5 h-5 text-emerald-400"></i>
+                                6.1 Simulator Terminal Linux (Bash Emulator)
+                            </h3>
+                            <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+                                Latih perintah Linux langsung di sini! Mendukung sistem direktori virtual (<code>mkdir</code>, <code>cd</code>, <code>ls</code>, <code>touch</code>, <code>rm</code>), membaca & mengedit <code>/etc/apt/sources.list</code>, <code>ip a</code>, <code>chmod</code>, dan <code>apt update</code>.
+                            </p>
+                        </div>
+                        <button onclick="resetBashSimulator()" class="self-start sm:self-auto px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 border border-zinc-700">
+                            Reset VM Terminal
+                        </button>
+                    </div>
+
+                    <!-- Quick Command Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        <span class="text-xs text-zinc-500 py-1">Klik Perintah Uji:</span>
+                        <button onclick="runBashCmd('help')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-emerald-400">help</button>
+                        <button onclick="runBashCmd('pwd')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-zinc-300">pwd</button>
+                        <button onclick="runBashCmd('mkdir -p /home/siswa/web_ukk')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-cyan-400">mkdir -p /home/siswa/web_ukk</button>
+                        <button onclick="runBashCmd('ls -la /home/siswa')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-cyan-400">ls -la /home/siswa</button>
+                        <button onclick="runBashCmd('cat /etc/apt/sources.list')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-orange-400">cat /etc/apt/sources.list</button>
+                        <button onclick="runBashCmd('nano /etc/apt/sources.list')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-[#E95420]">nano /etc/apt/sources.list (Ganti Repo!)</button>
+                        <button onclick="runBashCmd('apt update')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-emerald-400">apt update</button>
+                        <button onclick="runBashCmd('ip a')" class="px-2.5 py-1 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 font-mono text-xs text-cyan-400">ip a</button>
+                    </div>
+
+                    <!-- Terminal Window -->
+                    <div class="rounded-2xl overflow-hidden border border-zinc-700 bg-[#0c0c0e] shadow-2xl">
+                        <!-- Title Bar -->
+                        <div class="bg-zinc-900 px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                <span class="ml-2 text-xs font-mono text-zinc-400">root@debian-smk: ~ (Oracle VM VirtualBox Console)</span>
+                            </div>
+                            <span class="text-[11px] font-mono text-emerald-400">bash 5.2</span>
+                        </div>
+
+                        <!-- Simulated Nano Editor Modal Overlay (Hidden by default) -->
+                        <div id="nano-editor-panel" class="hidden bg-zinc-950 border-b border-zinc-700 p-4 font-mono text-xs space-y-3">
+                            <div class="bg-zinc-200 text-zinc-950 px-3 py-1 font-bold flex justify-between">
+                                <span>GNU nano 7.2</span>
+                                <span id="nano-filename">/etc/apt/sources.list</span>
+                                <span>Modified</span>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                                <span class="text-zinc-400">Isi Cepat Mirror Lokal:</span>
+                                <button type="button" onclick="fillNanoPreset('kartolo')" class="px-2 py-0.5 rounded bg-[#E95420]/20 text-orange-300 border border-[#E95420]/40 hover:bg-[#E95420]/30">Kartolo Surabaya (Debian 12)</button>
+                                <button type="button" onclick="fillNanoPreset('ugm')" class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30">Repo UGM (Debian 12)</button>
+                            </div>
+                            <textarea id="nano-textarea" rows="7" class="w-full bg-black border border-zinc-800 rounded p-3 text-emerald-300 font-mono text-xs focus:outline-none focus:border-[#E95420]"></textarea>
+                            <div class="flex items-center justify-between pt-1">
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="saveNanoFile()" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">^O Simpan & Keluar</button>
+                                    <button type="button" onclick="closeNanoFile()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300">^X Batal</button>
+                                </div>
+                                <span class="text-zinc-500 text-[11px]">Simulasi GNU Nano Editor</span>
+                            </div>
+                        </div>
+
+                        <!-- Terminal Output -->
+                        <div id="bash-output" onclick="document.getElementById('bash-input').focus()" class="p-4 sm:p-5 h-80 overflow-y-auto font-mono text-xs sm:text-sm space-y-2 cursor-text">
+                            <p class="text-zinc-400">Debian GNU/Linux 12 (bookworm) tty1 — VirtualBox Lab Environment</p>
+                            <p class="text-emerald-400">Ketik <span class="underline font-bold">help</span> untuk melihat daftar perintah yang bisa dicoba, atau klik <span class="text-orange-400 font-bold">nano /etc/apt/sources.list</span> untuk praktik mengganti repositori!</p>
+                        </div>
+
+                        <!-- Input Form -->
+                        <form id="bash-form" class="border-t border-zinc-800 bg-zinc-950 px-4 py-3 flex items-center gap-2 font-mono text-xs sm:text-sm">
+                            <span id="bash-prompt" class="text-emerald-400 font-bold shrink-0">root@debian-smk:/home/siswa#</span>
+                            <input type="text" id="bash-input" autocomplete="off" spellcheck="false" placeholder="Ketik perintah Linux di sini..." 
+                                class="w-full bg-transparent text-white focus:outline-none placeholder-zinc-600">
+                        </form>
+                    </div>
+                </section>
+
+                <!-- 6.2 Generator File sources.list & Konfigurasi IP Static -->
+                <section id="config-generator" class="scroll-mt-20 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-code-2" class="w-5 h-5 text-[#E95420]"></i>
+                            6.2 Generator Otomatis <code>sources.list</code> & IP Static Praktikum
+                        </h3>
+                        <p class="text-xs sm:text-sm text-zinc-400 mt-1">
+                            Pilih distro Linux, server mirror lokal Indonesia, serta alokasi IP Address dari soal guru untuk menghasilkan file konfigurasi siap pakai.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">Sistem Operasi VM</label>
+                            <select id="gen-distro" onchange="generateConfigs()" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#E95420]">
+                                <option value="debian12">Debian 12 (Bookworm)</option>
+                                <option value="debian11">Debian 11 (Bullseye)</option>
+                                <option value="ubuntu22">Ubuntu 22.04 LTS (Jammy)</option>
+                                <option value="ubuntu24">Ubuntu 24.04 LTS (Noble)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">Mirror Lokal Indonesia</label>
+                            <select id="gen-mirror" onchange="generateConfigs()" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-[#E95420]">
+                                <option value="kartolo">Kartolo SBY (kartolo.sby.datautama.net.id)</option>
+                                <option value="ugm">Repo UGM (repo.ugm.ac.id)</option>
+                                <option value="kebo">Kebo VLSM (kebo.pens.ac.id)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">Interface Lokal (Adapter 2)</label>
+                            <input type="text" id="gen-iface" value="enp0s8" oninput="generateConfigs()" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-xs sm:text-sm text-white focus:outline-none focus:border-[#E95420]">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-400 mb-1.5">IP Static Server (CIDR)</label>
+                            <input type="text" id="gen-ip" value="192.168.56.10/24" oninput="generateConfigs()" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-xs sm:text-sm text-white focus:outline-none focus:border-[#E95420]">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Output Repo -->
+                        <div class="code-wrapper bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-mono font-bold text-[#E95420]">Hasil: /etc/apt/sources.list</span>
+                                    <button onclick="copyCode(this)" class="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">
+                                        <i data-lucide="copy" class="w-3 h-3 text-[#E95420]"></i> Salin Repo
+                                    </button>
+                                </div>
+                                <pre id="gen-output-repo" class="font-mono text-xs text-emerald-300 leading-relaxed whitespace-pre-wrap overflow-x-auto"></pre>
+                            </div>
+                        </div>
+
+                        <!-- Output Network -->
+                        <div class="code-wrapper bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span id="gen-net-title" class="text-xs font-mono font-bold text-cyan-400">Hasil: /etc/network/interfaces</span>
+                                    <button onclick="copyCode(this)" class="flex items-center gap-1 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200">
+                                        <i data-lucide="copy" class="w-3 h-3 text-cyan-400"></i> Salin Config IP
+                                    </button>
+                                </div>
+                                <pre id="gen-output-net" class="font-mono text-xs text-cyan-200 leading-relaxed whitespace-pre-wrap overflow-x-auto"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6.3 Kuis Latihan Praktikum ASJ SMK (8 Soal) -->
+                <section id="kuis-asj" class="scroll-mt-20 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+                        <div>
+                            <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                                <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+                                6.3 Kuis Evaluasi Praktikum ASJ Linux & VirtualBox (8 Soal)
+                            </h3>
+                            <p class="text-xs sm:text-sm text-zinc-400 mt-1">Uji pemahamanmu seputar mode jaringan VirtualBox, perintah direktori Linux, hak akses chmod, dan manajemen repositori.</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span id="quiz-score-badge" class="hidden px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold text-sm">
+                                Skor: 0 / 100
+                            </span>
+                            <button onclick="resetQuiz()" class="px-3.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 border border-zinc-700">
+                                Ulangi Kuis
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="quiz-container" class="space-y-6">
+                        <!-- Rendered via JS -->
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap items-center justify-between gap-4">
+                        <button onclick="submitQuiz()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-[#E95420] to-orange-600 hover:from-orange-500 hover:to-[#E95420] text-white font-bold text-sm shadow-lg shadow-[#E95420]/25 transition">
+                            Periksa Jawaban & Lihat Pembahasan
+                        </button>
+                        <p id="quiz-feedback-msg" class="text-sm text-zinc-400"></p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Footer -->
+            <footer class="border-t border-zinc-800 pt-8 pb-12 text-center text-xs sm:text-sm text-zinc-500 space-y-2">
+                <p class="font-medium text-zinc-400">Portal Pembelajaran & Dokumentasi Praktikum ASJ Linux Server (VirtualBox) — SMK TKJ</p>
+                <p>Mendukung praktikum Debian 11/12 & Ubuntu Server LTS di laboratorium komputer sekolah.</p>
+            </footer>
+
+        </main>
+    </div>
+
+  <!-- JavaScript Application Logic -->
+    <script>
+        // ==========================================
+        // 1. DATA REPOSITORI LOKAL & LAYANAN SERVER
+        // ==========================================
+        const repoTabsData = {
+            deb12: {
+                title: 'Repositori Lokal Debian 12 (Bookworm) — Mirror Kartolo Surabaya',
+                note: 'Buka file dengan perintah: nano /etc/apt/sources.list, beri tanda pagar (#) pada baris deb cdrom://, lalu tempel baris di bawah ini.',
+                code: `# Repositori Debian 12 (Bookworm) - Mirror Kartolo SBY
+deb http://kartolo.sby.datautama.net.id/debian/ bookworm main contrib non-free non-free-firmware
+deb http://kartolo.sby.datautama.net.id/debian/ bookworm-updates main contrib non-free non-free-firmware
+deb http://kartolo.sby.datautama.net.id/debian-security/ bookworm-security main contrib non-free non-free-firmware`
+            },
+            deb11: {
+                title: 'Repositori Lokal Debian 11 (Bullseye) — Mirror Kartolo Surabaya',
+                note: 'Pastikan versi Debian kamu adalah Debian 11 (Bullseye) sebelum menggunakan daftar repositori ini.',
+                code: `# Repositori Debian 11 (Bullseye) - Mirror Kartolo SBY
+deb http://kartolo.sby.datautama.net.id/debian/ bullseye main contrib non-free
+deb http://kartolo.sby.datautama.net.id/debian/ bullseye-updates main contrib non-free
+deb http://kartolo.sby.datautama.net.id/debian-security/ bullseye-security main contrib non-free`
+            },
+            ubuntu22: {
+                title: 'Repositori Lokal Ubuntu Server 22.04 LTS (Jammy Jellyfish)',
+                note: 'Pada Ubuntu Server, file repositori utama terletak di /etc/apt/sources.list.',
+                code: `# Repositori Ubuntu 22.04 (Jammy) - Mirror Kartolo SBY
+deb http://kartolo.sby.datautama.net.id/ubuntu/ jammy main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ jammy-updates main restricted universe multiverse
+deb http://kartolo.sby.datautama.net.id/ubuntu/ jammy-security main restricted universe multiverse`
+            },
+            dvdiso: {
+                title: 'Menggunakan DVD ISO Repositori Lokal di VirtualBox (Tanpa Internet)',
+                note: 'Jika laboratorium sekolah tidak memiliki koneksi internet saat ujian, gunakan file ISO DVD-1 / DVD-2 / DVD-3 melalui menu Devices -> Optical Drives di VirtualBox.',
+                code: `# 1. Masukkan file ISO Debian DVD-1 melalui menu VirtualBox:
+#    Devices -> Optical Drives -> Choose a disk file -> Pilih debian-12-dvd-1.iso
+
+# 2. Daftarkan DVD ISO ke dalam /etc/apt/sources.list:
+apt-cdrom add
+
+# 3. Ulangi langkah 1 & 2 jika memiliki DVD-2 dan DVD-3, lalu jalankan:
+apt update`
+            }
+        };
+
+        const serviceTabsData = {
+            dhcp: {
+                title: 'Konfigurasi DHCP Server (isc-dhcp-server)',
+                desc: 'Memberikan IP Address otomatis kepada komputer klien (Windows Client / Host-Only) melalui interface jaringan lokal enp0s8.',
+                steps: [
+                    'Instal paket <code>isc-dhcp-server</code> menggunakan perintah <code>apt install isc-dhcp-server -y</code>.',
+                    'Tentukan interface yang akan menyebarkan DHCP pada file <code>/etc/default/isc-dhcp-server</code> dengan mengisi <code>INTERFACESv4="enp0s8"</code>.',
+                    'Edit konfigurasi subnet, rentang IP (range), router gateway, dan DNS pada file <code>/etc/dhcp/dhcpd.conf</code>.',
+                    'Restart service DHCP dengan <code>systemctl restart isc-dhcp-server</code> dan pastikan statusnya <strong>active (running)</strong>.'
+                ],
+                code: `# 1. Instal paket DHCP Server
+apt install -y isc-dhcp-server
+
+# 2. Tentukan interface jaringan lokal (enp0s8)
+nano /etc/default/isc-dhcp-server
+# Ubah baris paling bawah menjadi:
+INTERFACESv4="enp0s8"
+
+# 3. Konfigurasi subnet DHCP
+nano /etc/dhcp/dhcpd.conf
+# Tambahkan baris berikut di bagian paling bawah file:
+subnet 192.168.56.0 netmask 255.255.255.0 {
+  range 192.168.56.20 192.168.56.100;
+  option domain-name-servers 192.168.56.10, 8.8.8.8;
+  option domain-name "smktkj.sch.id";
+  option routers 192.168.56.10;
+  option broadcast-address 192.168.56.255;
+  default-lease-time 600;
+  max-lease-time 7200;
+}
+
+# 4. Restart & cek status layanan
+systemctl restart isc-dhcp-server
+systemctl status isc-dhcp-server`
+            },
+            dns: {
+                title: 'Konfigurasi DNS Server (Bind9)',
+                desc: 'Menerjemahkan nama domain lokal (misal: smktkj.sch.id) menjadi IP Address Server (192.168.56.10) dan sebaliknya (Reverse Zone).',
+                steps: [
+                    'Instal paket <code>bind9</code> dan <code>dnsutils</code> (untuk perintah pengujian <code>nslookup</code> / <code>dig</code>).',
+                    'Masuk ke direktori <code>/etc/bind</code>, lalu daftarkan zona forward dan reverse pada file <code>named.conf.local</code>.',
+                    'Salin template <code>db.local</code> menjadi <code>db.sekolah</code> (Forward) dan <code>db.127</code> menjadi <code>db.192</code> (Reverse).',
+                    'Arahkan DNS resolver server pada <code>/etc/resolv.conf</code> ke <code>nameserver 192.168.56.10</code>, lalu uji dengan <code>nslookup smktkj.sch.id</code>.'
+                ],
+                code: `# 1. Instal Bind9 & DNS Utils
+apt install -y bind9 dnsutils
+cd /etc/bind
+
+# 2. Daftarkan Zona Forward & Reverse di named.conf.local
+nano /etc/bind/named.conf.local
+# Isi dengan:
+zone "smktkj.sch.id" {
+    type master;
+    file "/etc/bind/db.sekolah";
+};
+zone "56.168.192.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.192";
+};
+
+# 3. Buat file zona Forward (db.sekolah)
+cp db.local db.sekolah
+nano db.sekolah
+# Ubah localhost menjadi smktkj.sch.id. dan arahkan ke 192.168.56.10:
+@       IN      SOA     smktkj.sch.id. root.smktkj.sch.id. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+@       IN      NS      smktkj.sch.id.
+@       IN      A       192.168.56.10
+www     IN      CNAME   smktkj.sch.id.
+
+# 4. Restart Bind9 & uji resolusi domain
+systemctl restart bind9
+nslookup smktkj.sch.id 192.168.56.10`
+            },
+            web: {
+                title: 'Konfigurasi Web Server (Apache2 & VirtualHost)',
+                desc: 'Menyajikan halaman website profil sekolah melalui protokol HTTP (Port 80) dan membuat halaman HTML kustom di /var/www/html.',
+                steps: [
+                    'Instal paket web server <code>apache2</code> dengan perintah <code>apt install apache2 -y</code>.',
+                    'Masuk ke direktori default web root <code>/var/www/html</code> atau buat direktori khusus proyek web sekolah.',
+                    'Buat file <code>index.html</code> menggunakan editor <code>nano</code> dan sesuaikan hak akses kepemilikannya ke user <code>www-data</code>.',
+                    'Buka browser di Windows Host / VM Client, lalu ketik <code>http://192.168.56.10</code> atau <code>http://smktkj.sch.id</code>.'
+                ],
+                code: `# 1. Instal paket Apache2 Web Server
+apt install -y apache2
+
+# 2. Masuk ke direktori web root & backup halaman bawaan
+cd /var/www/html
+mv index.html index.html.bak
+
+# 3. Membuat halaman website praktikum baru
+nano index.html
+# Isi dengan kode HTML sederhana:
+# <h1>Selamat Datang di Server SMK TKJ!</h1>
+# <p>Konfigurasi Linux Server VirtualBox Berhasil.</p>
+
+# 4. Mengatur hak akses direktori web agar aman & terbaca Apache
+chown -R www-data:www-data /var/www/html
+chmod -R 755 /var/www/html
+
+# 5. Restart service Apache2 & cek status
+systemctl restart apache2
+systemctl status apache2`
+            }
+        };
+
+        // ==========================================
+        // 2. DATA KUIS LATIHAN ASJ (8 SOAL)
+        // ==========================================
+        const quizData = [
+            {
+                q: "1. Pada pengaturan VirtualBox, jika kita ingin VM Debian Server dapat mengunduh paket aplikasi dari repositori internet sekaligus dapat di-remote SSH dari Windows asli (Host), kombinasi 2 mode network adapter yang paling tepat adalah...",
+                options: [
+                    "Adapter 1: Internal Network | Adapter 2: NAT",
+                    "Adapter 1: NAT | Adapter 2: Host-Only Adapter",
+                    "Adapter 1: Not Attached | Adapter 2: Bridged Adapter",
+                    "Adapter 1: Host-Only Adapter | Adapter 2: Internal Network"
+                ],
+                answer: 1,
+                explanation: "Adapter 1 (NAT) memberikan akses internet otomatis ke VM untuk apt install, sedangkan Adapter 2 (Host-Only Adapter) membentuk jaringan privat dua arah antara Windows Host dan VM Linux."
+            },
+            {
+                q: "2. Perintah Linux yang berfungsi untuk membuat direktori bertingkat sekaligus (misalnya /home/siswa/web/css tanpa error meskipun folder induknya belum ada) adalah...",
+                options: [
+                    "mkdir -r /home/siswa/web/css",
+                    "touch -p /home/siswa/web/css",
+                    "mkdir -p /home/siswa/web/css",
+                    "cp -p /home/siswa/web/css"
+                ],
+                answer: 2,
+                explanation: "Opsi -p (parents) pada perintah mkdir akan otomatis membuat seluruh direktori induk yang belum tersedia."
+            },
+            {
+                q: "3. Di direktori manakah file daftar alamat repositori Debian dan Ubuntu disimpan agar dapat diubah ke mirror lokal Indonesia?",
+                options: [
+                    "/etc/network/interfaces",
+                    "/etc/apt/sources.list",
+                    "/var/www/html/sources.list",
+                    "/etc/bind/named.conf.local"
+                ],
+                answer: 1,
+                explanation: "File /etc/apt/sources.list menyimpan URL server repositori yang dibaca oleh package manager APT."
+            },
+            {
+                q: "4. Setelah selesai mengedit dan menyimpan alamat mirror lokal baru pada file /etc/apt/sources.list, perintah wajib pertama yang harus dijalankan sebelum menginstal aplikasi adalah...",
+                options: [
+                    "apt upgrade",
+                    "apt install",
+                    "apt update",
+                    "apt autoremove"
+                ],
+                answer: 2,
+                explanation: "'apt update' menyinkronkan dan mengunduh daftar indeks paket terbaru dari server repositori yang baru saja dikonfigurasi."
+            },
+            {
+                q: "5. Jika suatu file web memiliki hak akses oktal 755 (chmod 755 index.html), apa arti dari angka 7 untuk Owner (pemilik file)?",
+                options: [
+                    "Read (4) dan Write (2) saja",
+                    "Read (4) dan Execute (1) saja",
+                    "Read (4), Write (2), dan Execute (1)",
+                    "Write (2) dan Execute (1) saja"
+                ],
+                answer: 2,
+                explanation: "Nilai 7 merupakan penjumlahan dari Read (4) + Write (2) + Execute (1) = 7 (akses penuh)."
+            },
+            {
+                q: "6. Pada sistem operasi Debian 11/12, file konfigurasi utama untuk mengatur IP Address Statis pada interface jaringan adalah...",
+                options: [
+                    "/etc/netplan/00-installer-config.yaml",
+                    "/etc/network/interfaces",
+                    "/etc/resolv.conf",
+                    "/etc/ssh/sshd_config"
+                ],
+                answer: 1,
+                explanation: "Debian menggunakan /etc/network/interfaces (service networking), sedangkan Ubuntu Server modern menggunakan Netplan (/etc/netplan/*.yaml)."
+            },
+            {
+                q: "7. Saat praktikum di sekolah tanpa koneksi internet, kita memasukkan file ISO Debian DVD-2 ke Virtual Drive VirtualBox. Perintah terminal untuk mendaftarkan DVD ISO tersebut ke repositori adalah...",
+                options: [
+                    "apt-cdrom add",
+                    "apt-iso mount",
+                    "dpkg --add-dvd",
+                    "mount /dev/cdrom"
+                ],
+                answer: 0,
+                explanation: "Perintah 'apt-cdrom add' memindai optical drive virtual VirtualBox dan otomatis menambahkan entri deb cdrom:// ke dalam /etc/apt/sources.list."
+            },
+            {
+                q: "8. Di direktori standar manakah file website (index.html) diletakkan agar dapat diakses secara default oleh layanan Web Server Apache2?",
+                options: [
+                    "/etc/apache2/html",
+                    "/home/www/public",
+                    "/var/www/html",
+                    "/root/webserver"
+                ],
+                answer: 2,
+                explanation: "DocumentRoot default dari Apache2 dan Nginx pada Debian/Ubuntu berada di /var/www/html."
+            }
+        ];
+
+      // ==========================================
+        // 3. INITIALIZATION & UI HANDLERS
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initSidebar();
+            initSearchFilter();
+            updateChmod();
+            switchRepoTab('deb12');
+            switchServiceTab('dhcp');
+            initBashSimulator();
+            generateConfigs();
+            renderQuiz();
+        });
+
+        // Toast Notification (Replaces alert)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const styleClass = type === 'success'
+                ? 'bg-zinc-900 border-emerald-500 text-emerald-300'
+                : 'bg-zinc-900 border-rose-500 text-rose-300';
+
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border ${styleClass} shadow-2xl text-xs sm:text-sm font-medium transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="w-4 h-4 shrink-0"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2800);
+        }
+
+        // Copy Command using document.execCommand('copy')
+        function copyCode(btn) {
+            const preBlock = btn.closest('.code-wrapper').querySelector('pre');
+            const textToCopy = preBlock.innerText;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            try {
+                document.execCommand('copy');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> <span class="text-emerald-400">Tersalin!</span>`;
+                lucide.createIcons();
+                showToast('Teks / perintah berhasil disalin!');
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    lucide.createIcons();
+                }, 2000);
+            } catch (err) {
+                showToast('Gagal menyalin perintah.', 'error');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // Mobile Sidebar Toggle
+        function initSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            const openBtn = document.getElementById('mobile-menu-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
+
+            const openSidebar = () => {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            };
+            const closeSidebar = () => {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            };
+
+            openBtn.addEventListener('click', openSidebar);
+            closeBtn.addEventListener('click', closeSidebar);
+            backdrop.addEventListener('click', closeSidebar);
+
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) closeSidebar();
+                });
+            });
+        }
+
+        // Live Sidebar Search Filter
+        function initSearchFilter() {
+            const searchInput = document.getElementById('search-input');
+            const navItems = document.querySelectorAll('#sidebar-nav li');
+
+            searchInput.addEventListener('input', (e) => {
+                const kw = e.target.value.toLowerCase().trim();
+                navItems.forEach(li => {
+                    li.classList.toggle('hidden', !li.innerText.toLowerCase().includes(kw));
+                });
+            });
+        }
+
+        // Interactive VirtualBox Topology Node Info
+        function selectVboxNode(node) {
+            const data = {
+                internet: {
+                    title: 'Internet / Server Mirror Repositori Indonesia',
+                    desc: 'Sumber paket aplikasi Linux (seperti kartolo.sby.datautama.net.id atau repo.ugm.ac.id). Diakses oleh VM Server melalui Adapter 1 yang diset ke mode NAT.'
+                },
+                vm_server: {
+                    title: 'VM Debian / Ubuntu Server (2 Network Adapter)',
+                    desc: 'Menggunakan Adapter 1 (NAT) untuk menarik paket instalasi dari internet tanpa mengganggu jaringan lab, dan Adapter 2 (Host-Only / Internal Network) sebagai IP Statis server untuk melayani SSH, Web, DNS, dan DHCP ke klien.'
+                },
+                client: {
+                    title: 'Windows Host (Asli) / VM Windows Client',
+                    desc: 'Jika Adapter 2 memakai Host-Only Adapter, Windows asli (192.168.56.1) dapat meremote SSH server dan membuka Web Server. Jika memakai Internal Network, pengujian dilakukan dari VM Windows Client di dalam VirtualBox.'
+                }
+            };
+            if (data[node]) {
+                document.getElementById('vbox-node-title').innerText = data[node].title;
+                document.getElementById('vbox-node-desc').innerText = data[node].desc;
+            }
+        }
+
+        // Interactive Chmod Calculator
+        function setChmodPreset(u, g, o) {
+            document.getElementById('chk-u-r').checked = (u & 4) > 0;
+            document.getElementById('chk-u-w').checked = (u & 2) > 0;
+            document.getElementById('chk-u-x').checked = (u & 1) > 0;
+
+            document.getElementById('chk-g-r').checked = (g & 4) > 0;
+            document.getElementById('chk-g-w').checked = (g & 2) > 0;
+            document.getElementById('chk-g-x').checked = (g & 1) > 0;
+
+            document.getElementById('chk-o-r').checked = (o & 4) > 0;
+            document.getElementById('chk-o-w').checked = (o & 2) > 0;
+            document.getElementById('chk-o-x').checked = (o & 1) > 0;
+
+            updateChmod();
+        }
+
+        function updateChmod() {
+            const calcGroup = (prefix) => {
+                const r = document.getElementById(`chk-${prefix}-r`).checked ? 4 : 0;
+                const w = document.getElementById(`chk-${prefix}-w`).checked ? 2 : 0;
+                const x = document.getElementById(`chk-${prefix}-x`).checked ? 1 : 0;
+                const sym = (r ? 'r' : '-') + (w ? 'w' : '-') + (x ? 'x' : '-');
+                return { val: r + w + x, sym };
+            };
+
+            const u = calcGroup('u');
+            const g = calcGroup('g');
+            const o = calcGroup('o');
+
+            const octal = `${u.val}${g.val}${o.val}`;
+            const symbolic = `-${u.sym}${g.sym}${o.sym}`;
+
+            document.getElementById('chmod-octal').innerText = octal;
+            document.getElementById('chmod-symbolic').innerText = symbolic;
+            document.getElementById('chmod-cmd').innerText = `chmod -R ${octal} /var/www/html && chown -R www-data:www-data /var/www/html`;
+        }
+
+        // Switch Repository Tab
+        function switchRepoTab(key) {
+            const item = repoTabsData[key];
+            if (!item) return;
+
+            document.querySelectorAll('.repo-tab').forEach(btn => {
+                if (btn.getAttribute('data-repo') === key) {
+                    btn.className = 'repo-tab px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#E95420] bg-[#E95420]/15 text-orange-300 transition';
+                } else {
+                    btn.className = 'repo-tab px-3.5 py-2 rounded-xl text-xs font-medium border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white transition';
+                }
+            });
+
+            document.getElementById('repo-tab-content').innerHTML = `
+                <div class="space-y-3 code-wrapper">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h4 class="font-bold text-white text-sm sm:text-base">${item.title}</h4>
+                        <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700 transition">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-[#E95420]"></i>
+                            <span>Salin Repositori</span>
+                        </button>
+                    </div>
+                    <p class="text-xs text-zinc-400">${item.note}</p>
+                    <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+                        <pre class="font-mono text-xs sm:text-[13px] text-emerald-300 leading-relaxed whitespace-pre">${escapeHTML(item.code)}</pre>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Switch Service Tab (DHCP / DNS / Web)
+        function switchServiceTab(key) {
+            const srv = serviceTabsData[key];
+            if (!srv) return;
+
+            document.querySelectorAll('.srv-tab').forEach(btn => {
+                if (btn.getAttribute('data-srv') === key) {
+                    btn.className = 'srv-tab px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border border-cyan-500 bg-cyan-500/15 text-cyan-300 transition';
+                } else {
+                    btn.className = 'srv-tab px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition';
+                }
+            });
+
+            const stepsHTML = srv.steps.map((st, idx) => `
+                <li class="flex items-start gap-3">
+                    <span class="w-6 h-6 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 font-mono text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                    <span class="text-xs sm:text-sm text-zinc-300 leading-relaxed">${st}</span>
+                </li>
+            `).join('');
+
+            document.getElementById('service-content-box').innerHTML = `
+                <div class="p-6 border-b border-zinc-800">
+                    <h3 class="text-lg sm:text-xl font-bold text-white">${srv.title}</h3>
+                    <p class="text-xs sm:text-sm text-zinc-400 mt-1">${srv.desc}</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-zinc-800">
+                    <div class="lg:col-span-5 p-6 space-y-3">
+                        <span class="text-xs font-mono font-semibold text-cyan-400 uppercase block mb-2">Alur Langkah Praktikum</span>
+                        <ol class="space-y-3">${stepsHTML}</ol>
+                    </div>
+                    <div class="lg:col-span-7 p-6 bg-zinc-950/50 code-wrapper">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-mono font-semibold text-emerald-400 uppercase">Perintah & File Konfigurasi</span>
+                            <button onclick="copyCode(this)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-200 border border-zinc-700">
+                                <i data-lucide="copy" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                <span>Salin Skrip</span>
+                            </button>
+                        </div>
+                        <div class="rounded-xl bg-zinc-950 border border-zinc-800 p-4 overflow-x-auto">
+                            <pre class="font-mono text-xs text-zinc-200 leading-relaxed whitespace-pre">${escapeHTML(srv.code)}</pre>
+                        </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+      // ==========================================
+        // 4. BASH TERMINAL SIMULATOR (VIRTUAL FS)
+        // ==========================================
+        let vfs = {};
+        let currentDir = '/home/siswa';
+        let activeNanoPath = '';
+
+        function resetVirtualFS() {
+            vfs = {
+                '/': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/etc': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/etc/apt': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/etc/apt/sources.list': {
+                    type: 'file',
+                    perms: '-rw-r--r--',
+                    content: `# Repositori Bawaan CDROM (Belum diganti ke Mirror Lokal)\ndeb cdrom:[Debian GNU/Linux 12.0.0 _Bookworm_ - Official amd64 DVD Binary-1]/ bookworm main\n# deb http://deb.debian.org/debian/ bookworm main`
+                },
+                '/etc/network': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/etc/network/interfaces': {
+                    type: 'file',
+                    perms: '-rw-r--r--',
+                    content: `auto lo\niface lo inet loopback\n\nallow-hotplug enp0s3\niface enp0s3 inet dhcp\n\nauto enp0s8\niface enp0s8 inet static\n    address 192.168.56.10\n    netmask 255.255.255.0`
+                },
+                '/var': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/var/www': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/var/www/html': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/var/www/html/index.html': {
+                    type: 'file',
+                    perms: '-rw-r--r--',
+                    content: `<h1>Apache2 Debian Default Page - SMK TKJ</h1>`
+                },
+                '/home': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/home/siswa': { type: 'dir', perms: 'drwxr-xr-x' },
+                '/home/siswa/catatan.txt': {
+                    type: 'file',
+                    perms: '-rw-r--r--',
+                    content: `Catatan Praktikum ASJ:\n1. Setting Adapter 1 NAT & Adapter 2 Host-Only\n2. Ganti /etc/apt/sources.list ke mirror Kartolo SBY`
+                }
+            };
+            currentDir = '/home/siswa';
+            updateBashPrompt();
+        }
+
+        function updateBashPrompt() {
+            const promptEl = document.getElementById('bash-prompt');
+            if (promptEl) promptEl.textContent = `root@debian-smk:${currentDir}#`;
+        }
+
+        function resolvePath(inputPath) {
+            if (!inputPath || inputPath === '.') return currentDir;
+            if (inputPath === '~') return '/home/siswa';
+
+            let fullPath = inputPath.startsWith('/') ? inputPath : `${currentDir}/${inputPath}`;
+            const parts = fullPath.split('/').filter(Boolean);
+            const stack = [];
+            for (const part of parts) {
+                if (part === '.') continue;
+                if (part === '..') {
+                    stack.pop();
+                } else {
+                    stack.push(part);
+                }
+            }
+            return '/' + stack.join('/');
+        }
+
+        function initBashSimulator() {
+            resetVirtualFS();
+            const form = document.getElementById('bash-form');
+            const input = document.getElementById('bash-input');
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const cmd = input.value.trim();
+                if (!cmd) return;
+                runBashCmd(cmd);
+                input.value = '';
+            });
+        }
+
+        function resetBashSimulator() {
+            resetVirtualFS();
+            closeNanoFile();
+            document.getElementById('bash-output').innerHTML = '<p class="text-emerald-400">VM Terminal di-reset ke kondisi awal. Ketik <span class="underline font-bold">help</span> untuk melihat panduan perintah.</p>';
+            showToast('Simulator Terminal VM berhasil di-reset.');
+        }
+
+        function runBashCmd(rawCmd) {
+            const output = document.getElementById('bash-output');
+            const cmdLine = document.createElement('div');
+            cmdLine.innerHTML = `<span class="text-emerald-400 font-bold">root@debian-smk:${currentDir}#</span> <span class="text-white">${escapeHTML(rawCmd)}</span>`;
+            output.appendChild(cmdLine);
+
+            const resEl = document.createElement('pre');
+            resEl.className = 'text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap pl-2 border-l-2 border-zinc-800';
+
+            const tokens = rawCmd.trim().split(/\s+/);
+            const cmd = tokens[0];
+            const args = tokens.slice(1);
+
+            if (cmd === 'clear') {
+                output.innerHTML = '';
+                return;
+            } else if (cmd === 'help') {
+                resEl.innerHTML = `<span class="text-emerald-400 font-bold">Perintah yang Didukung Bash Simulator:</span>
+  pwd                               - Menampilkan direktori aktif saat ini
+  ls [-la] [folder]                 - Melihat daftar file & direktori
+  cd [folder]                       - Pindah direktori (contoh: cd /etc/apt atau cd ..)
+  mkdir [-p] [nama_folder]          - Membuat direktori baru
+  touch [nama_file]                 - Membuat file kosong baru
+  rm [-rf] [target]                 - Menghapus file atau direktori
+  cat [nama_file]                   - Membaca isi file (contoh: cat /etc/apt/sources.list)
+  nano [nama_file]                  - Membuka editor Nano untuk mengedit file/repositori
+  chmod [mode] [file]               - Mengubah hak akses file (contoh: chmod 755 index.html)
+  apt update                        - Memperbarui indeks paket dari repositori
+  ip a                              - Menampilkan IP Address enp0s3 (NAT) & enp0s8 (Host-Only)
+  whoami                            - Menampilkan user aktif (root)
+  clear                             - Membersihkan layar terminal`;
+            } else if (cmd === 'whoami') {
+                resEl.textContent = 'root';
+            } else if (cmd === 'pwd') {
+                resEl.textContent = currentDir;
+            } else if (cmd === 'cd') {
+                const target = resolvePath(args[0] || '/home/siswa');
+                if (vfs[target] && vfs[target].type === 'dir') {
+                    currentDir = target;
+                    updateBashPrompt();
+                    resEl.textContent = '';
+                } else {
+                    resEl.innerHTML = `<span class="text-rose-400">bash: cd: ${escapeHTML(args[0] || '')}: No such file or directory</span>`;
+                }
+            } else if (cmd === 'ls') {
+                const pathArg = args.find(a => !a.startsWith('-'));
+                const targetDir = resolvePath(pathArg || currentDir);
+                if (!vfs[targetDir]) {
+                    resEl.innerHTML = `<span class="text-rose-400">ls: cannot access '${escapeHTML(pathArg)}': No such file or directory</span>`;
+                } else if (vfs[targetDir].type === 'file') {
+                    resEl.textContent = `${vfs[targetDir].perms} 1 root root 512 Nov 22 21:00 ${targetDir.split('/').pop()}`;
+                } else {
+                    const prefix = targetDir === '/' ? '/' : targetDir + '/';
+                    const children = Object.keys(vfs).filter(k => k !== targetDir && k.startsWith(prefix) && !k.slice(prefix.length).includes('/'));
+                    if (args.includes('-la') || args.includes('-l')) {
+                        const lines = [
+                            `drwxr-xr-x 4 root root 4096 Nov 22 21:00 .`,
+                            `drwxr-xr-x 3 root root 4096 Nov 22 21:00 ..`,
+                            ...children.map(c => {
+                                const name = c.split('/').pop();
+                                const isDir = vfs[c].type === 'dir';
+                                return `${vfs[c].perms} 1 root root ${isDir ? '4096' : ' 256'} Nov 22 21:00 <span class="${isDir ? 'text-cyan-400 font-bold' : 'text-zinc-200'}">${name}${isDir ? '/' : ''}</span>`;
+                            })
+                        ];
+                        resEl.innerHTML = lines.join('\n');
+                    } else {
+                        resEl.innerHTML = children.map(c => {
+                            const name = c.split('/').pop();
+                            return vfs[c].type === 'dir' ? `<span class="text-cyan-400 font-bold">${name}/</span>` : name;
+                        }).join('  ') || '<span class="text-zinc-500">(direktori kosong)</span>';
+                    }
+                }
+            } else if (cmd === 'mkdir') {
+                const isRecursive = args.includes('-p');
+                const dirArg = args.find(a => !a.startsWith('-'));
+                if (!dirArg) {
+                    resEl.innerHTML = `<span class="text-rose-400">mkdir: missing operand</span>`;
+                } else {
+                    const target = resolvePath(dirArg);
+                    if (vfs[target]) {
+                        resEl.innerHTML = isRecursive ? '' : `<span class="text-rose-400">mkdir: cannot create directory '${escapeHTML(dirArg)}': File exists</span>`;
+                    } else {
+                        const parts = target.split('/').filter(Boolean);
+                        let buildPath = '';
+                        let valid = true;
+                        for (let i = 0; i < parts.length; i++) {
+                            buildPath += '/' + parts[i];
+                            if (!vfs[buildPath]) {
+                                if (i < parts.length - 1 && !isRecursive) {
+                                    valid = false;
+                                    break;
+                                }
+                                vfs[buildPath] = { type: 'dir', perms: 'drwxr-xr-x' };
+                            }
+                        }
+                        if (valid) {
+                            resEl.innerHTML = `<span class="text-emerald-400">Direktori '${escapeHTML(target)}' berhasil dibuat.</span>`;
+                        } else {
+                            resEl.innerHTML = `<span class="text-rose-400">mkdir: cannot create directory '${escapeHTML(dirArg)}': No such file or directory (gunakan opsi -p)</span>`;
+                        }
+                    }
+                }
+            } else if (cmd === 'touch') {
+                const fileArg = args[0];
+                if (!fileArg) {
+                    resEl.innerHTML = `<span class="text-rose-400">touch: missing file operand</span>`;
+                } else {
+                    const target = resolvePath(fileArg);
+                    const parent = target.substring(0, target.lastIndexOf('/')) || '/';
+                    if (!vfs[parent] || vfs[parent].type !== 'dir') {
+                        resEl.innerHTML = `<span class="text-rose-400">touch: cannot touch '${escapeHTML(fileArg)}': No such file or directory</span>`;
+                    } else {
+                        if (!vfs[target]) {
+                            vfs[target] = { type: 'file', perms: '-rw-r--r--', content: '' };
+                        }
+                        resEl.innerHTML = `<span class="text-emerald-400">File '${escapeHTML(target)}' berhasil dibuat.</span>`;
+                    }
+                }
+            } else if (cmd === 'rm') {
+                const targetArg = args.find(a => !a.startsWith('-'));
+                if (!targetArg) {
+                    resEl.innerHTML = `<span class="text-rose-400">rm: missing operand</span>`;
+                } else {
+                    const target = resolvePath(targetArg);
+                    if (!vfs[target] || target === '/') {
+                        resEl.innerHTML = `<span class="text-rose-400">rm: cannot remove '${escapeHTML(targetArg)}': Tidak ditemukan atau dilindungi</span>`;
+                    } else {
+                        Object.keys(vfs).forEach(k => {
+                            if (k === target || k.startsWith(target + '/')) delete vfs[k];
+                        });
+                        resEl.innerHTML = `<span class="text-amber-400">'${escapeHTML(target)}' telah dihapus.</span>`;
+                    }
+                }
+            } else if (cmd === 'cat') {
+                const fileArg = args[0];
+                const target = resolvePath(fileArg);
+                if (!fileArg || !vfs[target]) {
+                    resEl.innerHTML = `<span class="text-rose-400">cat: ${escapeHTML(fileArg || '')}: No such file or directory</span>`;
+                } else if (vfs[target].type === 'dir') {
+                    resEl.innerHTML = `<span class="text-rose-400">cat: ${escapeHTML(fileArg)}: Is a directory</span>`;
+                } else {
+                    resEl.textContent = vfs[target].content || '(file kosong)';
+                }
+            } else if (cmd === 'nano') {
+                const fileArg = args[0] || '/etc/apt/sources.list';
+                const target = resolvePath(fileArg);
+                if (vfs[target] && vfs[target].type === 'dir') {
+                    resEl.innerHTML = `<span class="text-rose-400">nano: '${escapeHTML(fileArg)}' adalah direktori!</span>`;
+                } else {
+                    if (!vfs[target]) {
+                        vfs[target] = { type: 'file', perms: '-rw-r--r--', content: '' };
+                    }
+                    openNanoFile(target);
+                    resEl.innerHTML = `<span class="text-orange-400">Membuka GNU Nano Editor untuk ${escapeHTML(target)}... (Edit di panel atas terminal lalu klik Simpan)</span>`;
+                }
+            } else if (cmd === 'chmod') {
+                const mode = args[0];
+                const target = resolvePath(args[1] || '');
+                if (!mode || !args[1] || !vfs[target]) {
+                    resEl.innerHTML = `<span class="text-rose-400">chmod: penggunaan yang benar: chmod 755 nama_file</span>`;
+                } else {
+                    vfs[target].perms = vfs[target].type === 'dir' ? `drwxr-xr-x (${mode})` : `-rwxr-xr-x (${mode})`;
+                    resEl.innerHTML = `<span class="text-emerald-400">Hak akses '${escapeHTML(target)}' diubah ke mode ${escapeHTML(mode)}.</span>`;
+                }
+            } else if (rawCmd === 'apt update' || rawCmd === 'sudo apt update') {
+                const repoContent = vfs['/etc/apt/sources.list']?.content || '';
+                if (repoContent.includes('cdrom:') && !repoContent.includes('# deb cdrom:')) {
+                    resEl.innerHTML = `<span class="text-rose-400 font-bold">Err:1 cdrom://[Debian GNU/Linux 12.0.0] bookworm Release
+  Please use apt-cdrom to make this CD-ROM recognized by APT.
+E: The repository 'cdrom://... bookworm Release' does not have a Release file.</span>
+<span class="text-amber-300">Tips: Jalankan 'nano /etc/apt/sources.list' lalu ganti ke mirror lokal Indonesia (Kartolo/UGM)!</span>`;
+                } else {
+                    resEl.innerHTML = `Hit:1 http://kartolo.sby.datautama.net.id/debian bookworm InRelease
+Get:2 http://kartolo.sby.datautama.net.id/debian bookworm-updates InRelease [55.4 kB]
+Get:3 http://kartolo.sby.datautama.net.id/debian-security bookworm-security InRelease [48.0 kB]
+Fetched 103 kB in 1s (142 kB/s)
+<span class="text-emerald-400 font-bold">Reading package lists... Done
+Building dependency tree... Done
+All packages are up to date. (Repositori Lokal Berhasil Terhubung!)</span>`;
+                }
+            } else if (rawCmd === 'ip a' || rawCmd === 'ip addr') {
+                resEl.innerHTML = `1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN
+    inet 127.0.0.1/8 scope host lo
+2: <span class="text-emerald-400 font-bold">enp0s3</span>: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 state UP (Adapter 1: NAT)
+    inet <span class="text-emerald-300">10.0.2.15/24</span> brd 10.0.2.255 scope global dynamic enp0s3
+3: <span class="text-[#E95420] font-bold">enp0s8</span>: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 state UP (Adapter 2: Host-Only)
+    inet <span class="text-orange-300">192.168.56.10/24</span> brd 192.168.56.255 scope global enp0s8`;
+            } else {
+                resEl.innerHTML = `<span class="text-rose-400">bash: ${escapeHTML(cmd)}: command not found — ketik 'help' untuk daftar perintah.</span>`;
+            }
+
+            if (resEl.innerHTML !== '') output.appendChild(resEl);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Nano Simulator Functions
+        function openNanoFile(path) {
+            activeNanoPath = path;
+            document.getElementById('nano-filename').textContent = path;
+            document.getElementById('nano-textarea').value = vfs[path]?.content || '';
+            document.getElementById('nano-editor-panel').classList.remove('hidden');
+        }
+
+        function fillNanoPreset(mirror) {
+            const ta = document.getElementById('nano-textarea');
+            if (mirror === 'kartolo') {
+                ta.value = `# Repositori Debian 12 (Bookworm) - Mirror Kartolo SBY\ndeb http://kartolo.sby.datautama.net.id/debian/ bookworm main contrib non-free non-free-firmware\ndeb http://kartolo.sby.datautama.net.id/debian/ bookworm-updates main contrib non-free non-free-firmware\ndeb http://kartolo.sby.datautama.net.id/debian-security/ bookworm-security main contrib non-free non-free-firmware`;
+            } else {
+                ta.value = `# Repositori Debian 12 (Bookworm) - Mirror UGM\ndeb http://repo.ugm.ac.id/debian/ bookworm main contrib non-free non-free-firmware\ndeb http://repo.ugm.ac.id/debian/ bookworm-updates main contrib non-free non-free-firmware\ndeb http://repo.ugm.ac.id/debian-security/ bookworm-security main contrib non-free non-free-firmware`;
+            }
+        }
+
+        function saveNanoFile() {
+            if (activeNanoPath && vfs[activeNanoPath]) {
+                vfs[activeNanoPath].content = document.getElementById('nano-textarea').value;
+                showToast(`File ${activeNanoPath} berhasil disimpan! Coba jalankan 'apt update'.`);
+            }
+            closeNanoFile();
+        }
+
+        function closeNanoFile() {
+            document.getElementById('nano-editor-panel').classList.add('hidden');
+            activeNanoPath = '';
+        }
+
+      // ==========================================
+        // 5. GENERATOR FILE SOURCES.LIST & IP STATIC
+        // ==========================================
+        function generateConfigs() {
+            const distro = document.getElementById('gen-distro').value;
+            const mirror = document.getElementById('gen-mirror').value;
+            const iface = document.getElementById('gen-iface').value.trim() || 'enp0s8';
+            const ipCidr = document.getElementById('gen-ip').value.trim() || '192.168.56.10/24';
+
+            const mirrorHosts = {
+                kartolo: 'http://kartolo.sby.datautama.net.id',
+                ugm: 'http://repo.ugm.ac.id',
+                kebo: 'http://kebo.pens.ac.id'
+            };
+            const baseUrl = mirrorHosts[mirror];
+
+            let repoText = '';
+            if (distro === 'debian12') {
+                repoText = `deb ${baseUrl}/debian/ bookworm main contrib non-free non-free-firmware\ndeb ${baseUrl}/debian/ bookworm-updates main contrib non-free non-free-firmware\ndeb ${baseUrl}/debian-security/ bookworm-security main contrib non-free non-free-firmware`;
+            } else if (distro === 'debian11') {
+                repoText = `deb ${baseUrl}/debian/ bullseye main contrib non-free\ndeb ${baseUrl}/debian/ bullseye-updates main contrib non-free\ndeb ${baseUrl}/debian-security/ bullseye-security main contrib non-free`;
+            } else if (distro === 'ubuntu22') {
+                repoText = `deb ${baseUrl}/ubuntu/ jammy main restricted universe multiverse\ndeb ${baseUrl}/ubuntu/ jammy-updates main restricted universe multiverse\ndeb ${baseUrl}/ubuntu/ jammy-security main restricted universe multiverse`;
+            } else {
+                repoText = `deb ${baseUrl}/ubuntu/ noble main restricted universe multiverse\ndeb ${baseUrl}/ubuntu/ noble-updates main restricted universe multiverse\ndeb ${baseUrl}/ubuntu/ noble-security main restricted universe multiverse`;
+            }
+
+            document.getElementById('gen-output-repo').textContent = repoText;
+
+            // Network Output (Debian interfaces vs Ubuntu Netplan)
+            const [ipOnly, prefix] = ipCidr.split('/');
+            const cidrNum = parseInt(prefix, 10) || 24;
+            const maskNum = (0xffffffff << (32 - cidrNum)) >>> 0;
+            const netmask = [(maskNum >>> 24) & 255, (maskNum >>> 16) & 255, (maskNum >>> 8) & 255, maskNum & 255].join('.');
+
+            if (distro.startsWith('debian')) {
+                document.getElementById('gen-net-title').textContent = 'Hasil: /etc/network/interfaces (Debian)';
+                document.getElementById('gen-output-net').textContent = `auto lo\niface lo inet loopback\n\n# Adapter 1 (NAT)\nallow-hotplug enp0s3\niface enp0s3 inet dhcp\n\n# Adapter 2 (Host-Only / Internal)\nauto ${iface}\niface ${iface} inet static\n    address ${ipOnly}\n    netmask ${netmask}`;
+            } else {
+                document.getElementById('gen-net-title').textContent = 'Hasil: /etc/netplan/00-installer-config.yaml (Ubuntu)';
+                document.getElementById('gen-output-net').textContent = `network:\n  version: 2\n  ethernets:\n    enp0s3:\n      dhcp4: true\n    ${iface}:\n      dhcp4: false\n      addresses:\n        - ${ipOnly}/${cidrNum}`;
+            }
+        }
+
+        // ==========================================
+        // 6. QUIZ ENGINE
+        // ==========================================
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = quizData.map((item, qIdx) => {
+                const optsHTML = item.options.map((opt, oIdx) => `
+                    <label id="q-${qIdx}-opt-${oIdx}" class="flex items-center gap-3 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-zinc-700 cursor-pointer transition">
+                        <input type="radio" name="asj-q-${qIdx}" value="${oIdx}" class="w-4 h-4 text-[#E95420] bg-zinc-900 border-zinc-700 focus:ring-[#E95420]">
+                        <span class="text-xs sm:text-sm text-zinc-300">${opt}</span>
+                    </label>
+                `).join('');
+
+                return `
+                    <div class="space-y-3">
+                        <p class="font-semibold text-white text-sm sm:text-base">${item.q}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">${optsHTML}</div>
+                        <div id="exp-${qIdx}" class="hidden p-3.5 rounded-xl bg-zinc-950 border border-emerald-500/30 text-xs sm:text-sm text-emerald-200">
+                            <strong>Pembahasan:</strong> ${item.explanation}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function submitQuiz() {
+            let correct = 0;
+            let answered = 0;
+
+            quizData.forEach((item, qIdx) => {
+                const selected = document.querySelector(`input[name="asj-q-${qIdx}"]:checked`);
+                const expBox = document.getElementById(`exp-${qIdx}`);
+
+                item.options.forEach((_, oIdx) => {
+                    const lbl = document.getElementById(`q-${qIdx}-opt-${oIdx}`);
+                    lbl.classList.remove('border-emerald-500', 'bg-emerald-500/10', 'border-rose-500', 'bg-rose-500/10');
+                });
+
+                document.getElementById(`q-${qIdx}-opt-${item.answer}`).classList.add('border-emerald-500', 'bg-emerald-500/10');
+
+                if (selected) {
+                    answered++;
+                    const val = parseInt(selected.value, 10);
+                    if (val === item.answer) {
+                        correct++;
+                    } else {
+                        document.getElementById(`q-${qIdx}-opt-${val}`).classList.add('border-rose-500', 'bg-rose-500/10');
+                    }
+                }
+                expBox.classList.remove('hidden');
+            });
+
+            if (answered < quizData.length) {
+                showToast(`Kamu baru menjawab ${answered} dari ${quizData.length} soal.`, 'error');
+            } else {
+                showToast('Semua jawaban telah diperiksa!');
+            }
+
+            const score = Math.round((correct / quizData.length) * 100);
+            const badge = document.getElementById('quiz-score-badge');
+            badge.textContent = `Skor: ${score} / 100 (${correct}/${quizData.length} Benar)`;
+            badge.classList.remove('hidden');
+
+            document.getElementById('quiz-feedback-msg').textContent = score >= 75
+                ? 'Mantap! Kamu sudah memahami dasar Linux Server & jaringan VirtualBox.'
+                : 'Pelajari pembahasan di atas dan coba ulangi simulasi terminalnya.';
+        }
+
+        function resetQuiz() {
+            document.getElementById('quiz-score-badge').classList.add('hidden');
+            document.getElementById('quiz-feedback-msg').textContent = '';
+            renderQuiz();
+            showToast('Kuis berhasil direset.');
+        }
+    </script>
+</body>
+</html>
+
+  
